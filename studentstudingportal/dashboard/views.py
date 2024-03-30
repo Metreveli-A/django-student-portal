@@ -4,7 +4,7 @@ from django.contrib import messages
 # from django.shortcuts import render, redirect
 from django.views import generic
 from youtubesearchpython import VideosSearch
-
+import requests 
 
 # Create your views here.
 
@@ -41,7 +41,6 @@ class NotesDetailView(generic.DetailView):
 
 
 # homework code
-
 def homework(request):
     if request.method == "POST":
          form = HomeworkForm(request.POST)
@@ -80,7 +79,6 @@ def homework(request):
                }
     return render(request,'dashboard/homework.html',context)
 
-
 def update_homework(request,pk=None):
     homework = Homework.objects.get(id=pk)
     if homework.is_finished == True:
@@ -89,7 +87,6 @@ def update_homework(request,pk=None):
         homework.is_finished = True    
     homework.save()
     return redirect('homework')  
-
 
 def delete_homework(request,pk=None):
     Homework.objects.get(id=pk).delete()
@@ -167,7 +164,6 @@ def todo(request):
     }
     return render(request,"dashboard/todo.html",context)
 
-
 def update_todo(request,pk=None):
     todo = Todo.objects.get(id=pk)
     if todo.is_finished == True:
@@ -181,8 +177,39 @@ def delete_todo(request,pk=None):
     Todo.objects.get(id=pk).delete()
     return redirect("todo")
 
-
 # books code
-
 def books(request):
-    return render(request,"dashboard/books.html")
+    if request.method == "POST":
+        form = DashboardForm(request.POST)
+        text = request.POST['text']
+        url = "https://www.googleapis.com/books/v1/volumes?q="+text
+        r = requests.get(url)
+        answer = r.json()
+        result_list = []
+        for i in range(10):
+            result_dict = {
+                'title':answer['items'][i]['volumeInfo']['title'],
+                'subtitle':answer['items'][i]['volumeInfo'].get('subtitle'),
+                'description':answer['items'][i]['volumeInfo'].get('description'),
+                'count':answer['items'][i]['volumeInfo'].get('pageCount'),
+                'categories':answer['items'][i]['volumeInfo'].get('categories'),
+                'rating':answer['items'][i]['volumeInfo'].get('pageRating'),
+                'thumbnail':answer['items'][i]['volumeInfo'].get('imageLinks').get('thumbnail'),
+                'preview':answer['items'][i]['volumeInfo'].get('previewLink')
+            }
+           
+            result_list.append(result_dict)  
+            context={
+                'form':form,
+                'results':result_list
+            }   
+        return render(request,'dashboard/books.html',context)   
+    else:
+        form = DashboardForm()
+
+    form = DashboardForm()
+    context = {'form':form}
+    return render(request,"dashboard/books.html",context)
+
+# dictionary code
+
